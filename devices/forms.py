@@ -133,3 +133,25 @@ class TheftReportForm(forms.ModelForm):
             if isinstance(field.widget, forms.Textarea) and 'rows' not in field.widget.attrs:
                 # Default rows if not set in Meta.widgets (though we set it for circumstances & additional_details)
                 field.widget.attrs.setdefault('rows', 3)
+
+# --- NEW IMEI VERIFICATION FORM ---
+class IMEIVerificationForm(forms.Form):
+    imei = forms.CharField(
+        label='IMEI Number',
+        max_length=15,
+        min_length=15, # Ensure it's exactly 15 characters on the form level too
+        validators=[validate_imei], # Use our existing 15-digit validator
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg', # Larger input for prominence
+            'placeholder': 'Enter 15-digit IMEI number'
+        }),
+        help_text='Dial *#06# on the phone to find its IMEI number.'
+    )
+
+    def clean_imei(self):
+        # Additional cleaning if necessary, though validate_imei handles basic format.
+        # For example, stripping whitespace just in case.
+        imei_data = self.cleaned_data.get('imei')
+        if imei_data:
+            return imei_data.strip()
+        return imei_data

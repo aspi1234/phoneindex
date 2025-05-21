@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView,DetailView
+from django.views.generic import CreateView, ListView,DetailView,FormView 
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin  # To protect views
 from django.contrib import messages
 from .models import RegisteredDevice,TheftReport
-from .forms import DeviceRegistrationForm,TheftReportForm 
+from .forms import DeviceRegistrationForm,TheftReportForm,IMEIVerificationForm 
 from django.db import transaction # For atomic operations
 
 
@@ -148,3 +148,73 @@ class TheftReportDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView)
         context['device'] = self.object.device # self.object is the TheftReport instance
         context['page_title'] = f"Theft Report Details: Case ID {self.object.case_id}"
         return context
+
+# --- NEW VIEW FOR PHONE VERIFICATION TOOL ---
+class VerifyDeviceView(FormView):
+    template_name = 'devices/verify_device.html' # We'll create this template next
+    form_class = IMEIVerificationForm
+    # No success_url needed directly as we re-render the same page with results
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Verify Device IMEI'
+        # 'verification_result' will be added in form_valid or form_invalid
+        return context
+
+    def form_valid(self, form):
+        # This method is called when the submitted form is valid (IMEI format is correct)
+        imei_to_check = form.cleaned_data['imei']
+        context = self.get_context_data() # Get existing context (includes the form)
+        context['submitted_imei'] = imei_to_check # Pass submitted IMEI back to template
+
+        try:
+            device = RegisteredDevice.objects.get(imei=imei_to_check)
+            
+            if device.status == RegisteredDevice.STATUS_STOLEN:
+                context['verification_status'] = 'STOLEN'
+                context['device_info'] = {
+                    'make': device.make,
+                    'model_name': device.model_name,
+                    'color': device.color,
+                    'storage_capacity': device.storage_capacity,
+                    # Add other non-PII general description fields if desired
+                }
+                if hasattr(device, 'theft_report') and device.theft_report:
+                    context['theft_report_info'] = {
+                        'case_id': device.theft_report.case_id,
+                        'date_reported': device.theft_report.reported_at,
+                        'status': device.theft_report.get_status_display(), # Human-readable status
+                    }
+                else:
+                    # This case should ideally not happen if a device is STOLEN
+                    # but its theft_report was somehow deleted or not created.
+                    context['theft_report_info'] = { 
+                        'status': 'Details Unavailable' 
+                    }
+
+            elif device.status in [RegisteredDevice.STATUS_NORMAL, 
+                                   RegisteredDevice.STATUS_RECOVERED, 
+                                   RegisteredDevice.STATUS_FALSE_ALARM]:
+                context['verification_status'] = 'CLEAN'
+                context['message'] = "This device is registered in our system and is NOT currently reported as stolen."
+            
+            else: # Other statuses, treat as clean for verification purposes for now
+                context['verification_status'] = 'CLEAN'
+                context['message'] = f"This device is registered with status: {device.get_status_display()}."
+
+
+        except RegisteredDevice.DoesNotExist:
+            context['verification_status'] = 'NOT_IN_OUR_REGISTRY'
+            context['message'] = "This IMEI was not found in our device registry. This means it is not reported as stolen through our system."
+            # For Sarah, this is effectively "CLEAN" in terms of being reported on our platform.
+
+        # Re-render the same page with the form and the results in the context
+        return self.render_to_response(context)
+
+    def form_invalid(self, form):
+        # This method is called if the form itself is invalid (e.g., IMEI format wrong)
+        # The form with errors will be passed to the template automatically by FormView.
+        context = self.get_context_data()
+        context['page_title'] = 'Verify Device IMEI - Error' # Update title for error
+        messages.error(self.request, "Invalid IMEI format. Please check the number and try again.")
+        return self.render_to_response(context)

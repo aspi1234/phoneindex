@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterDeviceView, UserDeviceListView, ReportDeviceStolenView,TheftReportDetailView # Import ReportDeviceStolenView
+from .views import RegisterDeviceView, UserDeviceListView, ReportDeviceStolenView,TheftReportDetailView,VerifyDeviceView # Import ReportDeviceStolenView
 
 app_name = 'devices'  # Define an application namespace
 
@@ -16,4 +16,5 @@ urlpatterns = [
     # --- NEW URL FOR VIEWING THEFT REPORT DETAILS ---
     # It expects an integer 'pk' which is the primary key of the TheftReport instance.
     path('report/<int:pk>/', TheftReportDetailView.as_view(), name='theft_report_detail'),
+    path('verify-imei/', VerifyDeviceView.as_view(), name='verify_device_imei'),
 ]

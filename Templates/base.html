@@ -130,16 +130,18 @@
                         <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" aria-current="page" href="{% url 'home' %}">Home</a>
                         </li>
+                        {# --- NEW "VERIFY DEVICE" LINK --- #}
                         <li class="nav-item px-2">
-                        <a class="nav-link hover-overlay {% if request.resolver_match.url_name == 'verify_phone' %}active{% endif %}" href="#">Verify a Phone</a> {# Update href later #}
+                            <a class="nav-link hover-overlay {% if request.resolver_match.view_name == 'devices:verify_device_imei' %}active{% endif %}" href="{% url 'devices:verify_device_imei' %}">Verify a Phone</a>
                         </li>
-                        <a class="nav-link hover-overlay active" href="#">How it works </a> {# Update href later #}
+                        {# --- END NEW LINK --- #}
+                        <a class="nav-link hover-overlay" href="#">How it works </a> {# Update href later #}
                         </li>
                         <li class="nav-item px-2">
-                        <a class="nav-link hover-overlay active" href="#">About Us</a> {# Update href later #}
+                        <a class="nav-link hover-overlay" href="#">About Us</a> {# Update href later #}
                         </li>
                         <li class="nav-item dropdown mx-2 px-2">
-                        <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Ressources
                         </a>
                         <ul class="dropdown-menu">
