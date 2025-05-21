@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  /* Using similar form container style as auth pages */
+  .form-container {
+    max-width: 700px; /* Slightly wider for more fields, adjust as needed */
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .form-container h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    color: #343a40;
+  }
+  .form-container .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .form-container .form-control,
+  .form-container .form-select { /* For potential future select fields */
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+  }
+  .form-container textarea.form-control {
+      min-height: 100px; /* Ensure textarea has some height */
+  }
+  .form-container .btn-primary {
+    font-size: 1.2rem;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+  }
+  .form-text { /* Help text styling */
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="form-container">
+    <h2 class="text-center">{{ page_title|default:"Register Your Device" }}</h2>
+    <hr class="mb-4">
+    
+    <form method="post" novalidate>
+      {% csrf_token %}
+      
+      {# Display non-field errors if any #}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            <p class="mb-0">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+          {{ field }} {# Django renders field with widget and attrs (like class="form-control") #}
+          {% if field.help_text %}
+            <div id="{{ field.id_for_label }}_help" class="form-text">{{ field.help_text|safe }}</div>
+          {% endif %}
+          {% if field.errors %}
+            <div class="invalid-feedback d-block"> {# Use d-block to show errors #}
+              {% for error in field.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      
+      <button type="submit" class="btn btn-primary mt-3">Register Device</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

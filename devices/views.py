@@ -1,0 +1,150 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, ListView,DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin  # To protect views
+from django.contrib import messages
+from .models import RegisteredDevice,TheftReport
+from .forms import DeviceRegistrationForm,TheftReportForm 
+from django.db import transaction # For atomic operations
+
+
+class RegisterDeviceView(LoginRequiredMixin, CreateView):
+    model = RegisteredDevice
+    form_class = DeviceRegistrationForm
+    template_name = 'devices/register_device.html' # We'll create this template next
+    # Redirect to the list of user's devices after successful registration
+    success_url = reverse_lazy('devices:user_device_list') # Assuming 'devices' namespace and 'user_device_list' URL name
+
+    def form_valid(self, form):
+        # This method is called when valid form data has been POSTed.
+        # It should return an HttpResponse.
+        # Set the owner of the device to the currently logged-in user.
+        form.instance.owner = self.request.user
+        messages.success(self.request, f"Device '{form.instance.make} {form.instance.model_name}' registered successfully!")
+        return super().form_valid(form) # This will save the object and redirect
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Register New Device'
+        return context
+
+class UserDeviceListView(LoginRequiredMixin, ListView):
+    model = RegisteredDevice
+    template_name = 'devices/user_device_list.html' # We'll create this template next
+    context_object_name = 'devices' # Name of the variable to use in the template for the list of devices
+    paginate_by = 10 # Optional: if you want pagination
+
+    def get_queryset(self):
+        # Filter devices to show only those belonging to the currently logged-in user
+        # Order by most recently registered first
+        return RegisteredDevice.objects.filter(owner=self.request.user).order_by('-registration_date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'My Registered Devices'
+        if not context['devices'].exists():
+            messages.info(self.request, "You haven't registered any devices yet. Register one now!")
+        return context
+    
+# --- NEW VIEW FOR REPORTING A DEVICE STOLEN ---
+class ReportDeviceStolenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = TheftReport
+    form_class = TheftReportForm
+    template_name = 'devices/report_stolen_form.html' # We'll create this template
+    # Success URL will redirect back to the user's device list
+    
+    def get_success_url(self):
+        # After reporting, redirect to the list of devices
+        return reverse_lazy('devices:user_device_list')
+
+    def test_func(self):
+        # Check if the current user is the owner of the device they are trying to report
+        device = self.get_device()
+        return device.owner == self.request.user and device.status == RegisteredDevice.STATUS_NORMAL
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to report this device or it's already reported.")
+        # Redirect to device list or home if they don't have permission
+        if self.request.user.is_authenticated:
+            return redirect(reverse_lazy('devices:user_device_list'))
+        return redirect(reverse_lazy('home'))
+
+
+    def get_device(self):
+        # Helper method to get the RegisteredDevice instance
+        device_pk = self.kwargs.get('device_pk')
+        return get_object_or_404(RegisteredDevice, pk=device_pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['device'] = self.get_device()
+        context['page_title'] = f"Report Stolen: {context['device'].make} {context['device'].model_name}"
+        return context
+
+    def form_valid(self, form):
+        device_to_report = self.get_device()
+
+        # Check again if user is owner and device is 'NORMAL' before proceeding
+        if device_to_report.owner != self.request.user or device_to_report.status != RegisteredDevice.STATUS_NORMAL:
+            messages.error(self.request, "This device cannot be reported stolen at this time.")
+            return redirect(self.get_success_url()) # Or some other appropriate redirect
+
+        try:
+            with transaction.atomic(): # Ensure both operations succeed or fail together
+                # 1. Save the TheftReport instance
+                # The form's model is TheftReport, so form.instance is a TheftReport object
+                theft_report = form.save(commit=False) # Don't save to DB yet
+                theft_report.device = device_to_report # Link the report to the specific device
+                # case_id will be generated by TheftReport's save() method
+                theft_report.save() # Now save the TheftReport, generating case_id
+
+                # 2. Update the status of the RegisteredDevice
+                device_to_report.status = RegisteredDevice.STATUS_STOLEN
+                device_to_report.save() # Save the updated device status
+
+            messages.success(self.request, 
+                             f"Device '{device_to_report.make} {device_to_report.model_name}' "
+                             f"has been reported stolen. Case ID: {theft_report.case_id}")
+        except Exception as e:
+            # Log the exception e
+            messages.error(self.request, "An error occurred while reporting the device. Please try again.")
+            # Optionally, redirect to an error page or back to the form
+            return self.form_invalid(form)
+            
+        return redirect(self.get_success_url())
+
+    def dispatch(self, request, *args, **kwargs):
+        # Additional check before even displaying the form
+        # Check if a theft report already exists for this device
+        device = self.get_device()
+        if hasattr(device, 'theft_report') and device.theft_report is not None:
+            messages.warning(request, f"Device '{device.make} {device.model_name}' already has an active theft report (Case ID: {device.theft_report.case_id}).")
+            return redirect(reverse_lazy('devices:user_device_list'))
+        return super().dispatch(request, *args, **kwargs)
+
+# --- NEW VIEW FOR DISPLAYING THEFT REPORT DETAILS ---
+class TheftReportDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = TheftReport
+    template_name = 'devices/theft_report_detail.html'
+    context_object_name = 'theft_report' # Name to use in the template for the TheftReport instance
+
+    def test_func(self):
+        # Check if the current user is the owner of the device associated with this theft report
+        # Or if the user is a superuser/staff (admin)
+        theft_report = self.get_object() # self.get_object() gets the TheftReport instance
+        return theft_report.device.owner == self.request.user or self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to view this theft report.")
+        # Redirect to device list or home if they don't have permission
+        if self.request.user.is_authenticated:
+            return redirect(reverse_lazy('devices:user_device_list'))
+        return redirect(reverse_lazy('home'))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # The theft_report object is already in context['theft_report']
+        # We can also add the associated device directly for convenience in the template
+        context['device'] = self.object.device # self.object is the TheftReport instance
+        context['page_title'] = f"Theft Report Details: Case ID {self.object.case_id}"
+        return context

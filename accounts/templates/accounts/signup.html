@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sign Up - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+<style>
+  .form-container {
+    max-width: 650px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #f8f9fa; /* Light background like your cards */
+    border-radius: 15px; /* Rounded corners like your cards */
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1); /* Consistent shadow */
+  }
+  .form-container h2 {
+    font-size: 2.5rem; /* Consistent with your H1s in sections */
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #343a40; /* Dark color */
+  }
+  .form-container .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .form-container .form-control {
+    border-radius: 0.5rem; /* Softer radius for inputs */
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem; /* Consistent font size */
+  }
+  .form-container .btn-primary {
+    font-size: 1.2rem;
+    padding: 0.75rem 1.5rem;
+    width: 100%; /* Make button full width */
+  }
+  .form-text {
+    font-size: 0.9rem;
+  }
+  .form-check-label {
+    font-size: 1rem;
+  }
+  .auth-links {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+  }
+  .auth-links a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  .auth-links a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="form-container">
+    <h2 class="text-center">Create Your Account</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      
+      {# Display non-field errors (e.g., from form_invalid in view) if any #}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            <p class="mb-0">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="mb-3">
+          <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+          {{ field }} {# Django renders the field with its widget and attributes (like class="form-control" from forms.py) #}
+          {% if field.help_text %}
+            <div id="{{ field.id_for_label }}_help" class="form-text">{{ field.help_text|safe }}</div>
+          {% endif %}
+          {% if field.errors %}
+            <div class="invalid-feedback d-block"> {# Use d-block to show errors #}
+              {% for error in field.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      
+      <button type="submit" class="btn btn-primary mt-3">Sign Up</button>
+    </form>
+    <p class="text-center auth-links">
+      Already have an account? <a href="{% url 'login' %}">Log In</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

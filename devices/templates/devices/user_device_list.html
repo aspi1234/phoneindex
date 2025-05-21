@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  .device-card {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex; /* For flex layout of content */
+    flex-direction: column; /* Stack content vertically */
+    height: 100%; /* Make card fill col height */
+  }
+  .device-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  }
+  .device-card h5 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 0.75rem;
+  }
+  .device-card p {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #495057;
+  }
+  .device-card .badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.75em;
+  }
+  .device-card-content {
+      flex-grow: 1; /* Allow content to take up space */
+  }
+  .actions-btn-group {
+      margin-top: auto; /* Push action buttons to the bottom of the card */
+  }
+  .actions-btn-group .btn {
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+      padding: 0.375rem 0.75rem;
+  }
+  .actions-btn-group .btn:last-child {
+      margin-right: 0;
+  }
+  .page-header h2 {
+    font-size: 2.8rem;
+    font-weight: bold;
+    color: #343a40;
+    margin-bottom: 1rem;
+  }
+  .no-devices-message {
+      font-size: 1.2rem;
+      color: #6c757d;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ page_title|default:"My Devices" }}</h2>
+    <a href="{% url 'devices:register_device' %}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i> Register New Device {# Assumes Font Awesome for icon #}
+    </a>
+  </div>
+  <hr class="mb-4">
+
+  {% if devices %}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {# Responsive columns #}
+    {% for device in devices %}
+      <div class="col">
+        <div class="device-card">
+          <div class="device-card-content"> {# Wrapper for content above buttons #}
+              <h5>{{ device.make }} {{ device.model_name }}</h5>
+              <p><strong>IMEI:</strong> {{ device.imei }}</p>
+              <p><strong>Color:</strong> {{ device.color }}</p>
+              <p><strong>Storage:</strong> {{ device.storage_capacity }}</p>
+              {% if device.distinguishing_features %}
+              <p><strong>Features:</strong> {{ device.distinguishing_features|truncatewords:10 }}</p>
+              {% endif %}
+              <p>
+              <strong>Status:</strong> 
+              <span class="badge 
+                  {% if device.status == device.STATUS_NORMAL %}bg-success
+                  {% elif device.status == device.STATUS_STOLEN %}bg-danger
+                  {% elif device.status == device.STATUS_RECOVERED %}bg-info
+                  {% elif device.status == device.STATUS_FALSE_ALARM %}bg-warning text-dark
+                  {% else %}bg-secondary
+                  {% endif %}">
+                  {{ device.get_status_display }}
+              </span>
+              </p>
+              <p><small class="text-muted">Registered: {{ device.registration_date|date:"M d, Y, P" }}</small></p>
+              {% if device.status == device.STATUS_STOLEN and device.theft_report %}
+              <p class="text-danger"><small><strong>Case ID: {{ device.theft_report.case_id }}</strong></small></p>
+              {% endif %}
+          </div>
+          
+          <div class="mt-3 actions-btn-group">
+              {# --- MODIFIED ACTION BUTTONS --- #}
+              {% if device.status == device.STATUS_NORMAL %}
+                  <a href="{% url 'devices:report_device_stolen' device_pk=device.pk %}" class="btn btn-sm btn-warning">
+                      <i class="fas fa-exclamation-triangle me-1"></i> Report Stolen
+                  </a>
+              {% elif device.status == device.STATUS_STOLEN %}
+                  {# Placeholder for future "View Report" or "Mark as Found" actions #}
+                  {# --- MODIFIED "View Report" BUTTON --- #}
+                    {% if device.theft_report %} {# Check if theft_report actually exists #}
+                    <a href="{% url 'devices:theft_report_detail' pk=device.theft_report.pk %}" class="btn btn-sm btn-info">
+                        <i class="fas fa-eye me-1"></i> View Report
+                    </a>
+                    {% endif %}
+                    {# --- END MODIFICATION --- #} 
+                  <a href="#" class="btn btn-sm btn-success">Mark as Found</a>
+              {% else %}
+                  {# For RECOVERED or FALSE_ALARM status #}
+                    <a href="#" class="btn btn-sm btn-secondary">View Details</a>
+              {% endif %}
+              {# <a href="#" class="btn btn-sm btn-outline-primary">Edit Details</a> #}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+    {# Pagination (if enabled in ListView) #}
+    {% if is_paginated %}
+      <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">« First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+          {% endif %}
+
+          <li class="page-item disabled"><a class="page-link" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</a></li>
+
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last »</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    {# This message is also handled by the view's get_context_data, but good to have fallback #}
+    {# The messages framework will display the one from the view if devices is empty on first load #}
+    {# This p tag is for when the page reloads and messages are cleared but devices list is still empty #}
+    <p class="text-center no-devices-message">You haven't registered any devices yet.</p>
+    <div class="text-center mt-3">
+        <a href="{% url 'devices:register_device' %}" class="btn btn-lg btn-success">
+            <i class="fas fa-plus-circle me-1"></i> Register Your First Device
+        </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

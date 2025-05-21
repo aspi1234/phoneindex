@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  .report-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .report-container h2 {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem; /* Reduced margin */
+    color: #343a40;
+  }
+  .report-container .case-id-display {
+    font-size: 1.3rem;
+    color: #dc3545; /* Danger color for case ID */
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+  }
+  .report-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .report-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  .report-section h4 {
+    font-size: 1.4rem;
+    color: #007bff; /* Primary color for section titles */
+    margin-bottom: 0.75rem;
+  }
+  .report-details p {
+    margin-bottom: 0.6rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+  .report-details p strong {
+    color: #495057;
+    min-width: 180px; /* Align labels somewhat */
+    display: inline-block;
+  }
+  .badge-status {
+    font-size: 1rem;
+    padding: 0.6em 0.9em;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="report-container">
+    <div class="text-center">
+      <h2>Theft Report Details</h2>
+      {% if theft_report %}
+        <p class="case-id-display">Case ID: {{ theft_report.case_id }}</p>
+      {% else %}
+        <p class="text-danger">Report details not found.</p>
+      {% endif %}
+    </div>
+    <hr class="mb-4">
+
+    {% if theft_report and device %}
+      <div class="report-section">
+        <h4><i class="fas fa-mobile-alt me-2"></i>Device Information</h4>
+        <div class="report-details">
+          <p><strong>Make & Model:</strong> {{ device.make }} {{ device.model_name }}</p>
+          <p><strong>IMEI:</strong> {{ device.imei }}</p>
+          <p><strong>Color:</strong> {{ device.color }}</p>
+          <p><strong>Storage:</strong> {{ device.storage_capacity }}</p>
+          {% if device.distinguishing_features %}
+          <p><strong>Distinguishing Features:</strong> {{ device.distinguishing_features }}</p>
+          {% endif %}
+          <p><strong>Current Device Status:</strong> 
+            <span class="badge badge-status
+                {% if device.status == device.STATUS_NORMAL %}bg-success
+                {% elif device.status == device.STATUS_STOLEN %}bg-danger
+                {% elif device.status == device.STATUS_RECOVERED %}bg-info
+                {% elif device.status == device.STATUS_FALSE_ALARM %}bg-warning text-dark
+                {% else %}bg-secondary
+                {% endif %}">
+                {{ device.get_status_display }}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h4><i class="fas fa-file-alt me-2"></i>Report Details</h4>
+        <div class="report-details">
+          <p><strong>Report Status:</strong> 
+            <span class="badge badge-status
+                {% if theft_report.status == theft_report.REPORT_STATUS_ACTIVE %}bg-warning text-dark
+                {% elif theft_report.status == theft_report.REPORT_STATUS_OWNER_RECOVERY %}bg-success
+                {% elif theft_report.status == theft_report.REPORT_STATUS_FINDER_RETURN %}bg-success
+                {% elif theft_report.status == theft_report.REPORT_STATUS_FALSE_ALARM %}bg-info
+                {% else %}bg-secondary
+                {% endif %}">
+                {{ theft_report.get_status_display }}
+            </span>
+          </p>
+          <p><strong>Date & Time of Theft:</strong> {{ theft_report.date_time_of_theft|date:"M d, Y, P" }} {% if theft_report.is_time_approximate %}(Approximate){% endif %}</p>
+          <p><strong>Last Known Location:</strong> {{ theft_report.last_known_location }}</p>
+          <p><strong>Circumstances:</strong><br>{{ theft_report.circumstances|linebreaksbr }}</p>
+          {% if theft_report.additional_details %}
+          <p><strong>Additional Details:</strong><br>{{ theft_report.additional_details|linebreaksbr }}</p>
+          {% endif %}
+          <p><strong>Reported At:</strong> {{ theft_report.reported_at|date:"M d, Y, P" }}</p>
+          <p><strong>Report Last Updated:</strong> {{ theft_report.last_updated|date:"M d, Y, P" }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+      <a href="{% url 'devices:user_device_list' %}" class="btn btn-primary">
+        <i class="fas fa-arrow-left me-1"></i> Back to My Devices
+      </a>
+      {# Future actions for this report can go here, e.g., "Mark as Found", "Update Report" #}
+      {% if theft_report.device.status == theft_report.device.STATUS_STOLEN %}
+        <a href="#" class="btn btn-success ms-2">
+            <i class="fas fa-check-circle me-1"></i> Mark as Found/Resolved {# Placeholder #}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

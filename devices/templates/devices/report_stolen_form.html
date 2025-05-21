@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  /* Using similar form container style as auth pages */
+  .form-container {
+    max-width: 750px; /* Can be a bit wider for more descriptive fields */
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .form-container h2 {
+    font-size: 2.2rem; /* Slightly smaller if page_title is long */
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #343a40;
+  }
+  .form-container .device-info {
+    background-color: #e9ecef;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+  }
+  .form-container .device-info strong {
+    color: #495057;
+  }
+  .form-container .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .form-container .form-control,
+  .form-container .form-select,
+  .form-container .form-check-input { /* Added form-check-input for consistency */
+    border-radius: 0.5rem;
+    font-size: 1.1rem;
+  }
+  .form-container .form-control { /* Specific padding for text inputs */
+    padding: 0.75rem 1rem;
+  }
+  .form-container textarea.form-control {
+      min-height: 100px;
+  }
+  .form-container .btn-danger { /* Using btn-danger for reporting stolen */
+    font-size: 1.2rem;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+  }
+  .form-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+  .form-check { /* Bootstrap 5 structure for checkboxes */
+      padding-left: 0; /* Reset padding if applying custom structure */
+  }
+  .form-check .form-check-input {
+      float: none;
+      margin-left: 0;
+      margin-right: 0.5em; /* Space between checkbox and label */
+      vertical-align: middle;
+  }
+  .form-check .form-check-label {
+      vertical-align: middle;
+      font-weight: normal; /* Overriding .form-label boldness */
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="form-container">
+    <h2 class="text-center">{{ page_title|default:"Report Device Stolen" }}</h2>
+    
+    {% if device %}
+    <div class="device-info text-center">
+      <p class="mb-1">You are reporting the following device as stolen:</p>
+      <p class="mb-0"><strong>{{ device.make }} {{ device.model_name }}</strong> (IMEI: {{ device.imei }})</p>
+    </div>
+    {% endif %}
+    <hr class="mb-4">
+    
+    <form method="post" novalidate>
+      {% csrf_token %}
+      
+      {# Display non-field errors if any #}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            <p class="mb-0">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="mb-3">
+          {% if field.name == 'is_time_approximate' %}
+            {# Special rendering for checkbox to align with Bootstrap 5 structure #}
+            <div class="form-check">
+              {{ field }} {# Renders <input type="checkbox" ...> #}
+              <label for="{{ field.id_for_label }}" class="form-check-label">{{ field.label }}</label>
+            </div>
+          {% else %}
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }} {# Renders field with widget and attrs (like class="form-control") #}
+          {% endif %}
+          
+          {% if field.help_text %}
+            <div id="{{ field.id_for_label }}_help" class="form-text mt-1">{{ field.help_text|safe }}</div>
+          {% endif %}
+          {% if field.errors %}
+            <div class="invalid-feedback d-block mt-1"> {# Use d-block to show errors #}
+              {% for error in field.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      
+      <button type="submit" class="btn btn-danger mt-3">
+        <i class="fas fa-exclamation-triangle me-1"></i> Confirm and Report Stolen
+      </button>
+      <div class="text-center mt-3">
+        <a href="{% url 'devices:user_device_list' %}" class="btn btn-link">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
