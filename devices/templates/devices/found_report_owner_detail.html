@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  .detail-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff; /* White background for clean detail view */
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+  .detail-container h2 {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #343a40;
+  }
+  .detail-section {
+    margin-bottom: 2rem;
+  }
+  .detail-section h4 {
+    font-size: 1.5rem;
+    color: #007bff; /* Primary color for section titles */
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+  }
+  .detail-item {
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+  }
+  .detail-item strong {
+    color: #495057;
+    min-width: 180px; /* Align labels somewhat */
+    display: inline-block;
+  }
+  .alert-info { /* For finder's message */
+    background-color: #e9f7fd;
+    border-color: #b8e7fc;
+    color: #0c5460;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="detail-container">
+    <h2 class="text-center">{{ page_title }}</h2>
+    
+    {% if device_instance %}
+    <div class="alert alert-secondary" role="alert">
+      This found report pertains to your device: 
+      <strong>{{ device_instance.make }} {{ device_instance.model_name }}</strong> 
+      (IMEI: {{ device_instance.imei }}).
+      {% if theft_report_instance %}
+        <br>Original Theft Case ID: <strong>{{ theft_report_instance.case_id }}</strong>
+      {% endif %}
+    </div>
+    {% endif %}
+    <hr class="mb-4">
+
+    {% if found_report %}
+      <div class="detail-section">
+        <h4>Finder's Report Details</h4>
+        <div class="detail-item"><strong>Date & Time Found:</strong> {{ found_report.date_found|date:"M d, Y, P" }}</div>
+        <div class="detail-item"><strong>Location Found:</strong> {{ found_report.location_found|linebreaksbr }}</div>
+        <div class="detail-item"><strong>Device Condition:</strong> {{ found_report.get_device_condition_display }}</div>
+        <div class="detail-item"><strong>Finder's Preferred Return Method:</strong> {{ found_report.get_return_method_preference_display }}</div>
+      </div>
+
+      {% if found_report.finder_message_to_owner %}
+      <div class="detail-section">
+        <h4>Message from Finder</h4>
+        <div class="alert alert-info">
+          <p class="mb-0">{{ found_report.finder_message_to_owner|linebreaksbr }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {# Display finder's contact info ONLY IF they chose DIRECT_CONTACT #}
+      {% if found_report.return_method_preference == found_report.RETURN_METHOD_CHOICES.2.0 %} {# Fragile: Indexing choices tuple. Better to use constant in view/template if possible #}
+        {# Or better, pass a flag from the view: {% if can_show_finder_contact %} #}
+        <div class="detail-section">
+            <h4>Finder's Contact Information (for Direct Coordination)</h4>
+            {% if found_report.finder_name %}
+                <div class="detail-item"><strong>Finder's Name:</strong> {{ found_report.finder_name }}</div>
+            {% endif %}
+            {% if found_report.finder_contact_email %}
+                <div class="detail-item"><strong>Finder's Email:</strong> <a href="mailto:{{ found_report.finder_contact_email }}">{{ found_report.finder_contact_email }}</a></div>
+            {% endif %}
+            {% if found_report.finder_contact_phone %}
+                <div class="detail-item"><strong>Finder's Phone:</strong> <a href="tel:{{ found_report.finder_contact_phone }}">{{ found_report.finder_contact_phone }}</a></div>
+            {% endif %}
+            {% if not found_report.finder_contact_email and not found_report.finder_contact_phone and not found_report.finder_name %}
+                 <p>The finder selected direct contact but did not provide specific contact details in the report. They may update this later or expect contact through other means if the system allows.</p>
+            {% endif %}
+        </div>
+      {% endif %}
+
+      <div class="mt-4 text-center">
+        {# Placeholder for future actions like "Accept Plan", "Start Secure Chat", "Mark as Resolved after recovery" #}
+        <a href="{% url 'devices:user_theft_report_list' %}" class="btn btn-outline-secondary me-2">Back to My Cases</a>
+        {# Example: <a href="#" class="btn btn-primary">Accept Return Plan & Start Chat</a> #}
+      </div>
+
+    {% else %}
+      <div class="alert alert-warning" role="alert">
+        Found report details could not be loaded.
+      </div>
+      <div class="text-center mt-3">
+        <a href="{% url 'devices:user_theft_report_list' %}" class="btn btn-primary">Back to My Cases</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

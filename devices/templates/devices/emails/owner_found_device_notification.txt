@@ -1,0 +1,26 @@
+Subject: Good News! Your device '{{ device_make_model }}' may have been found - Case {{ case_id }}
+
+Dear {{ owner_name }},
+
+We have received a report indicating that your device, {{ device_make_model }} (Case ID: {{ case_id }}), may have been found.
+
+Here are some details provided by the finder:
+- Date Found: {{ date_found|date:"F d, Y, P" }}
+- Location Found: {{ location_found }}
+- Condition of Device: {{ device_condition }}
+- Finder's Preferred Return Method: {{ return_method_preference }}
+{% if finder_message %}
+- Message from Finder:
+  {{ finder_message }}
+{% endif %}
+
+Please log in to your account to view more details about this found report and to see options for coordinating the return if applicable.
+You can view your case details here: {{ action_url }}
+
+If you have already recovered your device through other means, please update its status on our platform.
+
+Sincerely,
+The PhoneIndex Team
+
+---
+© {% now "Y" %} PhoneIndex. Please do not reply directly to this email.

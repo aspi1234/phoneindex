@@ -17,12 +17,12 @@
   .report-container h2 {
     font-size: 2.2rem;
     font-weight: bold;
-    margin-bottom: 0.5rem; /* Reduced margin */
+    margin-bottom: 0.5rem;
     color: #343a40;
   }
   .report-container .case-id-display {
     font-size: 1.3rem;
-    color: #dc3545; /* Danger color for case ID */
+    color: #dc3545; 
     font-weight: bold;
     margin-bottom: 1.5rem;
   }
@@ -38,22 +38,55 @@
   }
   .report-section h4 {
     font-size: 1.4rem;
-    color: #007bff; /* Primary color for section titles */
+    color: #007bff; 
     margin-bottom: 0.75rem;
   }
-  .report-details p {
+  .report-details p, .found-attempt-details p { /* Added .found-attempt-details */
     margin-bottom: 0.6rem;
     font-size: 1.1rem;
     line-height: 1.6;
   }
-  .report-details p strong {
+  .report-details p strong, .found-attempt-details p strong { /* Added .found-attempt-details */
     color: #495057;
-    min-width: 180px; /* Align labels somewhat */
+    min-width: 180px; 
     display: inline-block;
   }
   .badge-status {
     font-size: 1rem;
     padding: 0.6em 0.9em;
+  }
+
+  /* Styling for Found Attempts Section */
+  .found-attempts-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px dashed #007bff; /* More prominent separator */
+  }
+  .found-attempts-section h3 {
+      font-size: 1.8rem;
+      color: #198754; /* Success green for "Found" */
+      margin-bottom: 1rem;
+  }
+  .found-attempt-card {
+      background-color: #fff;
+      border: 1px solid #cce5ff; /* Light blue border */
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  }
+  .found-attempt-card h5 {
+      font-size: 1.2rem;
+      color: #0a58ca;
+      margin-bottom: 1rem;
+  }
+  .contact-info-warning {
+      font-size: 0.9em;
+      color: #58151c; /* Darker red for warning */
+      background-color: #f8d7da;
+      padding: 0.5em;
+      border-radius: 0.25rem;
+      display: inline-block;
   }
 </style>
 {% endblock %}
@@ -97,7 +130,7 @@
       </div>
 
       <div class="report-section">
-        <h4><i class="fas fa-file-alt me-2"></i>Report Details</h4>
+        <h4><i class="fas fa-file-alt me-2"></i>Theft Report Specifics</h4>
         <div class="report-details">
           <p><strong>Report Status:</strong> 
             <span class="badge badge-status
@@ -110,6 +143,7 @@
                 {{ theft_report.get_status_display }}
             </span>
           </p>
+          <p><strong>Region of Theft:</strong> {{ theft_report.get_region_of_theft_display }}</p>
           <p><strong>Date & Time of Theft:</strong> {{ theft_report.date_time_of_theft|date:"M d, Y, P" }} {% if theft_report.is_time_approximate %}(Approximate){% endif %}</p>
           <p><strong>Last Known Location:</strong> {{ theft_report.last_known_location }}</p>
           <p><strong>Circumstances:</strong><br>{{ theft_report.circumstances|linebreaksbr }}</p>
@@ -120,16 +154,57 @@
           <p><strong>Report Last Updated:</strong> {{ theft_report.last_updated|date:"M d, Y, P" }}</p>
         </div>
       </div>
-    {% endif %}
+
+      {# --- NEW SECTION: FOUND DEVICE ATTEMPTS --- #}
+      {% if theft_report.found_reports_submitted.all %}
+        <div class="report-section found-attempts-section">
+          <h3 class="text-center"><i class="fas fa-hand-holding-heart me-2"></i>Device Found Reports</h3>
+          {% for found_attempt in theft_report.found_reports_submitted.all %}
+            <div class="found-attempt-card">
+              <h5>Report from Finder (Submitted: {{ found_attempt.reported_at|date:"M d, Y, P" }})</h5>
+              <div class="found-attempt-details">
+                <p><strong>Date Found:</strong> {{ found_attempt.date_found|date:"M d, Y, P" }}</p>
+                <p><strong>Location Found:</strong> {{ found_attempt.location_found|linebreaksbr }}</p>
+                <p><strong>Device Condition:</strong> {{ found_attempt.get_device_condition_display }}</p>
+                <p><strong>Return Preference:</strong> {{ found_attempt.get_return_method_preference_display }}</p>
+                {% if found_attempt.finder_message_to_owner %}
+                  <p><strong>Message from Finder:</strong><br><em>{{ found_attempt.finder_message_to_owner|linebreaksbr }}</em></p>
+                {% endif %}
+
+                {% if found_attempt.return_method_preference == found_attempt.RETURN_METHOD_CHOICES.2.0 %} {# DIRECT_CONTACT is the 3rd choice (index 2), .0 gets the key #}
+                  <hr>
+                  <p><strong>Finder's Contact Information (Shared with consent):</strong></p>
+                  {% if found_attempt.finder_name %}<p><strong>Name:</strong> {{ found_attempt.finder_name }}</p>{% endif %}
+                  {% if found_attempt.finder_contact_email %}<p><strong>Email:</strong> <a href="mailto:{{ found_attempt.finder_contact_email }}">{{ found_attempt.finder_contact_email }}</a></p>{% endif %}
+                  {% if found_attempt.finder_contact_phone %}<p><strong>Phone:</strong> <a href="tel:{{ found_attempt.finder_contact_phone }}">{{ found_attempt.finder_contact_phone }}</a></p>{% endif %}
+                  {% if not found_attempt.finder_contact_email and not found_attempt.finder_contact_phone %}
+                    <p class="text-muted"><em>Finder chose direct contact but did not provide specific contact details in the form.</em></p>
+                  {% endif %}
+                  <p class="contact-info-warning mt-2">
+                      <small><i class="fas fa-exclamation-triangle"></i> Please exercise caution and arrange to meet in a safe, public place if coordinating directly.</small>
+                  </p>
+                {% elif found_attempt.return_method_preference == found_attempt.RETURN_METHOD_CHOICES.1.0 %} {# ANONYMOUS_CHAT #}
+                  <hr>
+                  <p>The finder has opted for an anonymous handover via our platform.</p>
+                  <button class="btn btn-primary btn-sm mt-2" disabled>Start Secure Chat (Coming Soon)</button> {# Placeholder #}
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {# --- END NEW SECTION --- #}
+
+    {% endif %} {# End of if theft_report and device #}
 
     <div class="text-center mt-4">
       <a href="{% url 'devices:user_device_list' %}" class="btn btn-primary">
         <i class="fas fa-arrow-left me-1"></i> Back to My Devices
       </a>
-      {# Future actions for this report can go here, e.g., "Mark as Found", "Update Report" #}
       {% if theft_report.device.status == theft_report.device.STATUS_STOLEN %}
-        <a href="#" class="btn btn-success ms-2">
-            <i class="fas fa-check-circle me-1"></i> Mark as Found/Resolved {# Placeholder #}
+        {# We will refine this button's action later #}
+        <a href="#" class="btn btn-success ms-2" id="mark-as-found-btn">
+            <i class="fas fa-check-circle me-1"></i> Mark as Found/Resolved
         </a>
       {% endif %}
     </div>

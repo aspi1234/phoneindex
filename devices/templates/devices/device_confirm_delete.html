@@ -1,0 +1,62 @@
+{# devices/templates/devices/device_confirm_delete.html #}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  .confirmation-container {
+    max-width: 600px;
+    margin: 3rem auto;
+    padding: 2.5rem;
+    background-color: #fff; /* White background for a clean look */
+    border: 1px solid #dee2e6;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+  }
+  .confirmation-container h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #dc3545; /* Danger color for delete confirmation */
+  }
+  .confirmation-container p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .device-details {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: .5rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="confirmation-container text-center">
+    <h2>{{ page_title|default:"Confirm Deletion" }}</h2> {# Default title if not passed from view #}
+    <hr class="mb-4">
+
+    <p>Are you sure you want to delete the device:</p>
+    <div class="device-details">
+        <p class="mb-1"><strong>{{ device.make }} {{ device.model_name }}</strong></p>
+        <p class="mb-0"><small>IMEI: {{ device.imei }}</small></p>
+    </div>
+    <p class="text-danger fw-bold">This action cannot be undone. All associated theft reports and found reports for this device will also be permanently deleted.</p>
+
+    <form method="post"> {# Action URL is current page for DeleteView #}
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger btn-lg mt-3">
+        <i class="fas fa-trash-alt me-1"></i> Yes, Delete Device
+      </button>
+      <a href="{% url 'devices:user_device_list' %}" class="btn btn-secondary btn-lg mt-3 ms-2">
+        Cancel
+      </a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -14,6 +14,37 @@ def validate_imei(value):
         )
     # A more advanced validation might include the Luhn algorithm check here.
 
+def validate_imei_luhn(value):
+    """
+    Validates the IMEI using the Luhn algorithm (Mod 10 check).
+    Assumes the value is already 15 digits, as checked by validate_imei_format.
+    """
+    # Convert string to list of integers
+    digits = [int(d) for d in value]
+
+    # Drop the last digit (checksum digit)
+    checksum_digit = digits.pop()
+    
+    # Reverse the remaining digits
+    reversed_digits = digits[::-1]
+
+    total = 0
+    for index, digit in enumerate(reversed_digits):
+        if index % 2 == 0: # Double every second digit
+            doubled_digit = digit * 2
+            if doubled_digit > 9: # If doubled digit is 10 or more, sum its digits
+                total += (doubled_digit % 10) + (doubled_digit // 10)
+            else:
+                total += doubled_digit
+        else: # Add other digits as they are
+            total += digit
+
+    # Compare the calculated checksum with the actual checksum digit
+    if (total + checksum_digit) % 10 != 0:
+        raise ValidationError(
+            _('The IMEI checksum is invalid. Please check your IMEI.'),
+        )
+
 class RegisteredDevice(models.Model):
     STATUS_NORMAL = 'NORMAL'
     STATUS_STOLEN = 'STOLEN'
@@ -208,3 +239,114 @@ class TheftReport(models.Model):
 
 # Ensure RegisteredDevice model is defined above or imported if in separate file
 # Ensure REPORT_STATUS_CHOICES, REPORT_STATUS_ACTIVE are defined within TheftReport or globally.
+
+from django.db import models
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+import re
+
+# ... (validate_imei, RegisteredDevice, TheftReport models as previously defined) ...
+
+
+# --- NEW FOUND REPORT MODEL ---
+class FoundReport(models.Model):
+    CONDITION_CHOICES = [
+        ('PERFECT', _('Perfect condition, like new')),
+        ('GOOD', _('Good condition, minor wear')),
+        ('FAIR', _('Fair condition, visible scratches/dents')),
+        ('POOR', _('Poor condition, screen damaged or other issues')),
+        ('NOT_WORKING', _('Not working / Unable to power on')),
+        ('UNKNOWN', _('Condition unknown')),
+    ]
+
+    RETURN_METHOD_CHOICES = [
+        ('POLICE', _('Deliver to a local police station')),
+        ('ANONYMOUS_CHAT', _('Arrange anonymous handover (via this platform)')), # For future chat
+        ('DIRECT_CONTACT', _('Willing to coordinate directly (share my contact info with owner)')),
+        ('OTHER', _('Other (please specify in message)')),
+    ]
+
+    # This field links the found report to an existing theft report if a match is made.
+    # It can be null initially, as the finder might not provide a perfect Case ID or IMEI,
+    # and system matching might happen after submission or require admin intervention.
+    theft_report = models.ForeignKey(
+        TheftReport,
+        on_delete=models.CASCADE, # If the original TheftReport is deleted, keep this FoundReport but unlink.
+        null=True, blank=True,     # Can be unlinked initially or if no match.
+        related_name='found_reports'
+    )
+
+    matched_device_direct = models.ForeignKey( # Renamed to avoid confusion if you already have 'matched_device'
+        RegisteredDevice,
+        on_delete=models.CASCADE, # CHANGE THIS: If RegisteredDevice is deleted, these FoundReports are also deleted.
+        null=True, blank=True,
+        related_name='direct_found_reports',
+        help_text="Direct link to the registered device, if matched independently of a theft report."
+    )
+
+    # Information provided by the finder to help identify the device
+    case_id_provided = models.CharField(
+        _('Case ID (if known)'), 
+        max_length=30, 
+        blank=True, null=True,
+        help_text=_("If you found a Case ID on the device's lock screen or were given one.")
+    )
+    imei_provided = models.CharField(
+        _('IMEI (if known)'), 
+        max_length=15, 
+        blank=True, null=True, 
+        validators=[validate_imei], # Can still validate if they provide it
+        help_text=_("The 15-digit IMEI, if you can find it (*#06# or on device).")
+    )
+    device_description_provided = models.TextField(
+        _('Device Description (if Case ID/IMEI unknown)'),
+        blank=True, null=True,
+        help_text=_("e.g., Black iPhone, Samsung with blue case, small crack on screen.")
+    )
+
+    # Details about the find
+    date_found = models.DateTimeField(_('Date and Time Found'))
+    location_found = models.TextField(_('Location Where Found'))
+    device_condition = models.CharField(
+        _('Condition of Device'),
+        max_length=20,
+        choices=CONDITION_CHOICES,
+        default='UNKNOWN'
+    )
+
+    # Finder's preferences and optional information
+    return_method_preference = models.CharField(
+        _('Preferred Return Method'),
+        max_length=20,
+        choices=RETURN_METHOD_CHOICES
+    )
+    finder_message_to_owner = models.TextField(
+        _('Message to Owner (Optional)'),
+        blank=True, null=True
+    )
+    # Optional contact details for the finder
+    # These should only be requested/used if return_method_preference is 'DIRECT_CONTACT' or 'OTHER'
+    finder_name = models.CharField(_('Your Name (Optional)'), max_length=100, blank=True, null=True)
+    finder_contact_email = models.EmailField(_('Your Email (Optional)'), blank=True, null=True)
+    # For finder_contact_phone, consider using django-phonenumber-field or robust validation if you implement it
+    finder_contact_phone = models.CharField(_('Your Phone Number (Optional)'), max_length=20, blank=True, null=True) 
+
+    reported_at = models.DateTimeField(_('Found Report Submitted At'), auto_now_add=True)
+    is_processed = models.BooleanField(_('Processed by System/Admin'), default=False, help_text="Indicates if this report has been reviewed or matched.")
+
+
+    def __str__(self):
+        if self.theft_report:
+            return f"Found report linked to Case ID {self.theft_report.case_id} (submitted by finder)"
+        elif self.case_id_provided:
+            return f"Found report for Case ID '{self.case_id_provided}' (submitted by finder)"
+        elif self.imei_provided:
+            return f"Found report for IMEI '{self.imei_provided}' (submitted by finder)"
+        return f"Found report submitted {self.reported_at.strftime('%Y-%m-%d')}"
+
+    class Meta:
+        verbose_name = _('Found Device Report')
+        verbose_name_plural = _('Found Device Reports')
+        ordering = ['-reported_at']

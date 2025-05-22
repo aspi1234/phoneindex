@@ -26,4 +26,5 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('home/', RedirectView.as_view(url='/', permanent=True)), # Redirects /home/ to /
     path('devices/', include('devices.urls', namespace='devices')), # Include the namespace here as well
+    path('about-us/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
 ]

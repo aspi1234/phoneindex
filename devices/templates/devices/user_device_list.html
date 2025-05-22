@@ -13,9 +13,9 @@
     margin-bottom: 1.5rem;
     padding: 1.5rem;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    display: flex; /* For flex layout of content */
-    flex-direction: column; /* Stack content vertically */
-    height: 100%; /* Make card fill col height */
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
   }
   .device-card:hover {
     transform: translateY(-5px);
@@ -37,19 +37,26 @@
     padding: 0.5em 0.75em;
   }
   .device-card-content {
-      flex-grow: 1; /* Allow content to take up space */
+      flex-grow: 1; 
   }
   .actions-btn-group {
-      margin-top: auto; /* Push action buttons to the bottom of the card */
+      margin-top: auto; 
   }
   .actions-btn-group .btn {
-      margin-right: 0.5rem;
+      margin-right: 0.5rem; /* Space between inline buttons */
       font-size: 0.9rem;
       padding: 0.375rem 0.75rem;
   }
-  .actions-btn-group .btn:last-child {
+  .actions-btn-group .btn:last-child { /* No margin for the last inline button */
       margin-right: 0;
   }
+  
+  /* Styling for the delete button container to make it full width below other buttons */
+  .delete-button-container {
+    margin-top: 0.75rem; /* Space above the delete button */
+  }
+  /* Removed .btn-full-width, will use Bootstrap's d-grid directly on the form */
+
   .page-header h2 {
     font-size: 2.8rem;
     font-weight: bold;
@@ -68,17 +75,17 @@
   <div class="page-header d-flex justify-content-between align-items-center mb-4">
     <h2>{{ page_title|default:"My Devices" }}</h2>
     <a href="{% url 'devices:register_device' %}" class="btn btn-primary">
-        <i class="fas fa-plus-circle me-1"></i> Register New Device {# Assumes Font Awesome for icon #}
+        <i class="fas fa-plus-circle me-1"></i> Register New Device
     </a>
   </div>
   <hr class="mb-4">
 
   {% if devices %}
-  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {# Responsive columns #}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for device in devices %}
       <div class="col">
         <div class="device-card">
-          <div class="device-card-content"> {# Wrapper for content above buttons #}
+          <div class="device-card-content">
               <h5>{{ device.make }} {{ device.model_name }}</h5>
               <p><strong>IMEI:</strong> {{ device.imei }}</p>
               <p><strong>Color:</strong> {{ device.color }}</p>
@@ -104,56 +111,74 @@
               {% endif %}
           </div>
           
-          <div class="mt-3 actions-btn-group">
-              {# --- MODIFIED ACTION BUTTONS --- #}
+          {# Container for action buttons (excluding delete) #}
+          <div class="actions-btn-group mb-2"> 
               {% if device.status == device.STATUS_NORMAL %}
                   <a href="{% url 'devices:report_device_stolen' device_pk=device.pk %}" class="btn btn-sm btn-warning">
                       <i class="fas fa-exclamation-triangle me-1"></i> Report Stolen
                   </a>
               {% elif device.status == device.STATUS_STOLEN %}
-                  {# Placeholder for future "View Report" or "Mark as Found" actions #}
-                  {# --- MODIFIED "View Report" BUTTON --- #}
-                    {% if device.theft_report %} {# Check if theft_report actually exists #}
+                  {% if device.theft_report %}
                     <a href="{% url 'devices:theft_report_detail' pk=device.theft_report.pk %}" class="btn btn-sm btn-info">
-                        <i class="fas fa-eye me-1"></i> View Report
+                        <i class="fas fa-eye me-1"></i> View Theft Report
                     </a>
+                    {% if device.theft_report.found_reports.exists %} {# Check if any found_reports are linked to this theft_report #}
+                        {% with latest_found_report=device.theft_report.found_reports.all.first %} {# Get the first/latest one #}
+                            {% if latest_found_report %}
+                            <a href="{% url 'devices:found_report_owner_detail' pk=latest_found_report.pk %}" class="btn btn-sm btn-success">
+                                <i class="fas fa-search-location me-1"></i> View Found Info
+                            </a>
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}
-                    {# --- END MODIFICATION --- #} 
-                  <a href="#" class="btn btn-sm btn-success">Mark as Found</a>
+                    {# --- END "VIEW FOUND INFO" BUTTON --- #}
+                  {% endif %}
+                  <a href="#" class="btn btn-sm btn-primary">Mark as Found</a> {# Placeholder - links to future "Mark as Found" view #}
               {% else %}
-                  {# For RECOVERED or FALSE_ALARM status #}
-                    <a href="#" class="btn btn-sm btn-secondary">View Details</a>
+                  {# For RECOVERED or FALSE_ALARM status, could show a link to its TheftReport if one exists #}
+                  {% if device.theft_report %}
+                     <a href="{% url 'devices:theft_report_detail' pk=device.theft_report.pk %}" class="btn btn-sm btn-secondary">View Case History</a>
+                  {% else %}
+                     <a href="#" class="btn btn-sm btn-secondary">View Details</a> {# Generic placeholder #}
+                  {% endif %}
               {% endif %}
-              {# <a href="#" class="btn btn-sm btn-outline-primary">Edit Details</a> #}
           </div>
+
+          {# --- NEW DELETE BUTTON AND FORM --- #}
+          {# The d-grid class on the form makes the button inside it full-width #}
+          <div class="delete-button-container">
+            <form method="post" action="{% url 'devices:delete_device' pk=device.pk %}" class="d-grid"> 
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                        onclick="return confirm('Are you sure you want to delete the device \'{{ device.make }} {{ device.model_name }}\' (IMEI: {{ device.imei }}) and all its related reports? This action cannot be undone.');">
+                    <i class="fas fa-trash-alt me-1"></i> Delete This Device
+                </button>
+            </form>
+          </div>
+          {# --- END DELETE BUTTON AND FORM --- #}
+
         </div>
       </div>
     {% endfor %}
   </div>
 
-    {# Pagination (if enabled in ListView) #}
+    {# Pagination ... (same as before) ... #}
     {% if is_paginated %}
       <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-          {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page=1">« First</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-          {% endif %}
-
-          <li class="page-item disabled"><a class="page-link" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</a></li>
-
-          {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last »</a></li>
-          {% endif %}
-        </ul>
-      </nav>
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page=1">« First</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item disabled"><a class="page-link" href="#">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</a></li>
+            {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last »</a></li>
+            {% endif %}
+          </ul>
+        </nav>
     {% endif %}
-
   {% else %}
-    {# This message is also handled by the view's get_context_data, but good to have fallback #}
-    {# The messages framework will display the one from the view if devices is empty on first load #}
-    {# This p tag is for when the page reloads and messages are cleared but devices list is still empty #}
     <p class="text-center no-devices-message">You haven't registered any devices yet.</p>
     <div class="text-center mt-3">
         <a href="{% url 'devices:register_device' %}" class="btn btn-lg btn-success">

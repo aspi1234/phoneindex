@@ -5,15 +5,20 @@
 
 {% block extra_head %}
   <style>
+    /* Smooth scrolling for anchor links */
+    html {
+      scroll-behavior: smooth;
+    }
+    
     /* Hero Section Styles */
     .hero-section {
-      min-height: 50vh; /* Adjust 80px to match your navbar height */
+      min-height: 50vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       position: relative;
       overflow: hidden;
-      display: flex; /* Added for align-items-center */
-      align-items: center; /* Added for vertical centering */
-      justify-content: center; /* Added for horizontal centering */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .hero-section::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -25,131 +30,178 @@
     .hero-section .btn { transition: transform 0.3s ease, box-shadow 0.3s ease; }
     .hero-section .btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
     .hero-section .share-tech-regular {
-      font-size: 2.5rem; font-weight: bold; color: #ffffff; /* Changed back to white for better contrast on gradient */
-      line-height: 1.8; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Adjusted for readability */
+      font-size: 2.5rem; font-weight: bold; color: #ffffff;
+      line-height: 1.8; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     }
+
     /* How It Works Section Styles */
-    .how { min-height: auto; padding-bottom: 3rem; } /* Adjusted min-height */
+    .how { 
+      min-height: auto; 
+      padding-bottom: 3rem;
+      scroll-margin-top: 80px; /* Prevents content from being hidden under fixed navbar */
+    }
     .step-number { width: 60px; height: 60px; background: #007bff; color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin-bottom: 1rem; }
-    .card { border-radius: 20px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; } /* Added transition */
+    .card { border-radius: 20px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; }
     .card:hover { transform: translateY(-10px); box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important; }
     .card ul { list-style-type: none; padding-left: 0; }
-    .card ul li { position: relative; padding-left: 1.5rem; margin-bottom: 0.75rem; font-size: 1.2rem; } /* Adjusted font-size */
+    .card ul li { position: relative; padding-left: 1.5rem; margin-bottom: 0.75rem; font-size: 1.2rem; }
     .card ul li:before { content: "✓"; color: #007bff; position: absolute; left: 0; font-weight: bold; }
     .card { animation: slideUp 0.6s ease-out forwards; opacity: 0; }
     .col-md-6:nth-child(2) .card { animation-delay: 0.2s; }
+
     /* Services Section Styles */
-    .services { background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%); padding: 3rem 0; } /* Adjusted padding */
+    .services { 
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%); 
+      padding: 3rem 0;
+      scroll-margin-top: 80px; /* Prevents content from being hidden under fixed navbar */
+    }
     .services .card { margin-bottom: 2rem; }
     .services .card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important; }
     .services .btn { transition: transform 0.3s ease, box-shadow 0.3s ease; }
     .services .btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    .services .card { animation: slideUp 0.6s ease-out forwards; opacity: 0; } /* Re-declared for specificity if needed */
-    .services .col:nth-child(2) .card { animation-delay: 0.3s; } /* Re-declared */
-    /* General Typography & Sizing */
+    .services .card { animation: slideUp 0.6s ease-out forwards; opacity: 0; }
+    .services .col:nth-child(2) .card { animation-delay: 0.3s; }
+
+    /* General Styles */
     .display-1 { font-size: 4.5rem; }
     .card-title { font-size: 1.75rem; }
-    .card-text { font-size: 1.1rem; line-height: 1.6; } /* Adjusted font-size */
-    .services h1, .how h1 { font-size: 3rem; margin-bottom: 2rem; } /* Adjusted font-size */
-    p { font-size: 1.2rem; } /* Adjusted for consistency */
+    .card-text { font-size: 1.1rem; line-height: 1.6; }
+    .services h1, .how h1 { font-size: 3rem; margin-bottom: 2rem; }
+    p { font-size: 1.2rem; }
     @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 {% endblock %}
 
 {% block content %}
-  <div class="hero-section"> {# Removed d-flex align-items-center justify-content-center as it's in the style block now #}
+  <div class="hero-section">
     <div class="container text-center">
-        <h1 class="display-1 fw-bold text-white mb-4">Phone Index</h1>
-        <p class="mb-5 share-tech-regular">
-          Want to buy a phone but not sure if it's stolen?<br> We got you covered!<br>
-          Verify the authenticity and status of any mobile device instantly.<br>
-        </p>
-        <div class="d-flex justify-content-center gap-3">
-            <a href="#services" class="btn btn-primary btn-lg px-5">Get Started</a> {# Update href #}
-            <a href="#howitworks" class="btn btn-outline-light btn-lg px-5">Learn More</a> {# Update href #}
-        </div>
+      <h1 class="display-1 fw-bold text-white mb-4">Phone Index</h1>
+      <p class="mb-5 share-tech-regular">
+        Want to buy a phone but not sure if it's stolen?<br> We got you covered!<br>
+        Verify the authenticity and status of any mobile device instantly.<br>
+      </p>
+      {# The buttons "Get Started" and "Learn More" have been removed from here #}
     </div>
   </div>
 
-  <div class="container py-5 how " id=howitworks>
+  <div class="container py-5 how" id="howitworks">
     <h1 class="text-center mb-5 fw-bold">How It Works</h1>
     <div class="row g-4">
-        <!-- Step 1 -->
-        <div class="col-md-6">
-            <div class="card h-100 border-0 shadow-lg bg-light">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4"><span class="step-number">1</span></div>
-                    <h3 class="card-title h4 mb-4 fw-bold">Enter Your IMEI</h3>
-                    <p class="card-text">
-                        Input your phone's IMEI number. You can find this by:
-                        <ul class="text-start mt-3">
-                            <li>Dialing *#06# on your phone</li>
-                            <li>Checking your phone settings under "About Phone"</li>
-                            <li>Looking on the original packaging</li>
-                        </ul>
-                    </p>
-                </div>
-            </div>
+      <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-lg bg-light">
+          <div class="card-body text-center p-5">
+            <div class="mb-4"><span class="step-number">1</span></div>
+            <h3 class="card-title h4 mb-4 fw-bold">Enter Your IMEI</h3>
+            <p class="card-text">
+              Input your phone's IMEI number. You can find this by:
+              <ul class="text-start mt-3">
+                <li>Dialing *#06# on your phone</li>
+                <li>Checking your phone settings under "About Phone"</li>
+                <li>Looking on the original packaging</li>
+              </ul>
+            </p>
+          </div>
         </div>
-        <!-- Step 2 -->
-        <div class="col-md-6">
-            <div class="card h-100 border-0 shadow-lg bg-light">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4"><span class="step-number">2</span></div>
-                    <h3 class="card-title h4 mb-4 fw-bold">Instant Verification</h3>
-                    <p class="card-text">
-                        Our system instantly checks:
-                        <ul class="text-start mt-3">
-                            <li>If the phone is reported stolen</li>
-                            <li>Blacklist status across networks</li>
-                            <li>Device authenticity verification</li>
-                        </ul>
-                    </p>
-                </div>
-            </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-lg bg-light">
+          <div class="card-body text-center p-5">
+            <div class="mb-4"><span class="step-number">2</span></div>
+            <h3 class="card-title h4 mb-4 fw-bold">Instant Verification</h3>
+            <p class="card-text">
+              Our system instantly checks:
+              <ul class="text-start mt-3">
+                <li>If the phone is reported stolen</li>
+                <li>Blacklist status across networks</li>
+                <li>Device authenticity verification</li>
+              </ul>
+            </p>
+          </div>
         </div>
+      </div>
     </div>
   </div>
 
   <div class="container-fluid py-5 services" id="services">
     <h1 class="text-center mb-5 fw-bold">Our Services</h1>
     <div class="row row-cols-1 g-4 px-4">
-        <!-- Service 1 -->
-        <div class="col">
-            <div class="card h-100 border-0 shadow-lg bg-light mx-auto" style="max-width: 900px;">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4"><i class="fas fa-search-location display-4 text-primary"></i></div>
-                    <h3 class="card-title h4 mb-4 fw-bold">Phone Verification</h3>
-                    <p class="card-text">
-                        Ensure your potential purchase is safe and legitimate. Our verification service helps you:
-                        <ul class="text-start mt-3">
-                            <li>Check if the phone is reported stolen</li>
-                            <li>Verify device authenticity</li>
-                            <li>Check blacklist status</li>
-                        </ul>
-                    </p>
-                    <div class="mt-4"><a href="#" class="btn btn-primary btn-lg px-5">Verify Phone</a></div> {# Update href #}
-                </div>
-            </div>
+      <div class="col">
+        <div class="card h-100 border-0 shadow-lg bg-light mx-auto" style="max-width: 900px;">
+          <div class="card-body text-center p-5">
+            <div class="mb-4"><i class="fas fa-search-location display-4 text-primary"></i></div>
+            <h3 class="card-title h4 mb-4 fw-bold">Phone Verification</h3>
+            <p class="card-text">
+              Ensure your potential purchase is safe and legitimate. Our verification service helps you:
+              <ul class="text-start mt-3">
+                <li>Check if the phone is reported stolen</li>
+                <li>Verify device authenticity</li>
+                <li>Check blacklist status</li>
+              </ul>
+            </p>
+            <div class="mt-4"><a href="#" class="btn btn-primary btn-lg px-5">Verify Phone</a></div>
+          </div>
         </div>
-        <!-- Service 2 -->
-        <div class="col">
-            <div class="card h-100 border-0 shadow-lg bg-light mx-auto" style="max-width: 900px;">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4"><i class="fas fa-shield-alt display-4 text-primary"></i></div>
-                    <h3 class="card-title h4 mb-4 fw-bold">Stolen Phone Registration</h3>
-                    <p class="card-text">
-                        Lost or had your phone stolen? Register it in our database:
-                        <ul class="text-start mt-3">
-                            <li>Quick and easy registration process</li>
-                            <li>Help prevent illegal resale</li>
-                            <li>Contribute to reducing phone theft</li>
-                        </ul>
-                    </p>
-                    <div class="mt-4"><a href="#" class="btn btn-primary btn-lg px-5">Register Stolen Phone</a></div> {# Update href #}
-                </div>
-            </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 border-0 shadow-lg bg-light mx-auto" style="max-width: 900px;">
+          <div class="card-body text-center p-5">
+            <div class="mb-4"><i class="fas fa-shield-alt display-4 text-primary"></i></div>
+            <h3 class="card-title h4 mb-4 fw-bold">Stolen Phone Registration</h3>
+            <p class="card-text">
+              Lost or had your phone stolen? Register it in our database:
+              <ul class="text-start mt-3">
+                <li>Quick and easy registration process</li>
+                <li>Help prevent illegal resale</li>
+                <li>Contribute to reducing phone theft</li>
+                </ul>
+            </p>
+            <div class="mt-4"><a href="#" class="btn btn-primary btn-lg px-5">Register Stolen Phone</a></div>
+          </div>
         </div>
+      </div>
     </div>
   </div>
+
+  <div class="container py-5"> {# Use py-5 for top/bottom padding #}
+    <div id="imei-definition" style="display: none; padding: 20px; background-color: #f8f9fa; border-radius: 10px; margin-top: 30px;">
+      <h2>What is an IMEI?</h2>
+      <p>An IMEI (International Mobile Equipment Identity) is a unique 15-digit number that identifies individual mobile phones, as well as some satellite phones. It's like a serial number for your phone. When a phone is stolen or lost, its IMEI can be blacklisted by network carriers, preventing it from being used on their networks.</p>
+      <p>It's crucial for verifying a phone's authenticity and legal status. Knowing your IMEI helps track a device if it's lost and confirms if it's reported stolen.</p>
+      <button class="btn btn-secondary" onclick="document.getElementById('imei-definition').style.display = 'none';">Close</button>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    function showImeiDefinition() {
+      var imeiSection = document.getElementById('imei-definition');
+      if (imeiSection) {
+        imeiSection.style.display = 'block';
+        // Optional: Scroll to the definition if it's far down the page
+        imeiSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+      }
+    }
+
+    // Nouvelle logique pour vérifier les paramètres d'URL au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('show_imei') === 'true') {
+        showImeiDefinition();
+        // Optionnel : Nettoyer le paramètre d'URL pour éviter le rechargement/double-affichage si l'utilisateur actualise
+        // window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      // Si vous voulez également que le défilement vers #howitworks soit smooth quand on arrive d'une autre page
+      // C'est souvent géré automatiquement par le navigateur avec `scroll-behavior: smooth` si l'ancre est dans l'URL.
+      // Cependant, si vous voulez forcer un défilement après un chargement complet de la page
+      // et que l'ancre est présente, vous pouvez ajouter ceci:
+      if (window.location.hash === '#howitworks') {
+          const howItWorksSection = document.getElementById('howitworks');
+          if (howItWorksSection) {
+              howItWorksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+      }
+    });
+  </script>
 {% endblock %}

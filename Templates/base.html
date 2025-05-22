@@ -138,7 +138,7 @@
                         <a class="nav-link hover-overlay" href="#">How it works </a> {# Update href later #}
                         </li>
                         <li class="nav-item px-2">
-                        <a class="nav-link hover-overlay" href="#">About Us</a> {# Update href later #}
+                            <a class="nav-link hover-overlay {% if request.resolver_match.url_name == 'about_us' %}active{% endif %}" aria-current="page" href="{% url 'about_us' %}">About Us</a> {# Update href later #}
                         </li>
                         <li class="nav-item dropdown mx-2 px-2">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -160,6 +160,8 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li><a class="dropdown-item" href="{% url 'devices:user_device_list' %}"><i class="fas fa-list-ul me-2"></i>My Devices</a></li>
                             <li><a class="dropdown-item" href="{% url 'devices:register_device' %}"><i class="fas fa-plus-circle me-2"></i>Register Device</a></li>
+                            {# --- NEW "MY CASES" LINK --- #}
+                            <li><a class="dropdown-item" href="{% url 'devices:user_theft_report_list' %}"><i class="fas fa-folder-open me-2"></i>My Cases</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#">My Profile</a></li> {# Placeholder for profile page #}
                             <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
@@ -190,9 +192,20 @@
     {% endblock %}
   </div>
 
-  <footer class="text-center mt-auto py-3 bg-light"> {# mt-auto pushes footer to bottom if content is short #}
-    <p>© {% now "Y" %} PhoneIndex. All rights reserved.</p>
-  </footer>
+ <footer class="text-center mt-auto py-3 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 text-md-start"> {# Align left on medium screens and up #}
+                <p class="mb-0">© {% now "Y" %} PhoneIndex. All rights reserved.</p>
+            </div>
+            <div class="col-md-6 text-md-end"> {# Align right on medium screens and up #}
+                {# --- NEW "FOUND A PHONE?" LINK --- #}
+                <a href="{% url 'devices:report_found_device' %}" class="text-decoration-none">Found a Phone? Report It Here</a>
+                {# --- END NEW LINK --- #}
+            </div>
+        </div>
+    </div>
+  </footer>>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   {% block extra_scripts %}{% endblock %}

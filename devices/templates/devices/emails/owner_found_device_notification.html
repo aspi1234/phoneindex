@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Device May Have Been Found!</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .header { background-color: #f0f8ff; padding: 10px; text-align: center; border-bottom: 1px solid #ddd;}
+        .header h1 { margin: 0; color: #007bff; }
+        .content p { margin-bottom: 10px; }
+        .content strong { color: #555; }
+        .footer { margin-top: 20px; text-align: center; font-size: 0.9em; color: #777; }
+        .button { display: inline-block; padding: 10px 20px; margin-top:15px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; }
+        a { color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Good News from PhoneIndex!</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ owner_name }},</p>
+            
+            <p>We have received a report indicating that your device, <strong>{{ device_make_model }}</strong> (Case ID: <strong>{{ case_id }}</strong>), may have been found.</p>
+            
+            <p>Here are some details provided by the finder:</p>
+            <ul>
+                <li><strong>Date Found:</strong> {{ date_found|date:"F d, Y, P" }}</li>
+                <li><strong>Location Found:</strong> {{ location_found|linebreaksbr }}</li>
+                <li><strong>Condition of Device:</strong> {{ device_condition }}</li>
+                <li><strong>Finder's Preferred Return Method:</strong> {{ return_method_preference }}</li>
+                {% if finder_message %}
+                    <li><strong>Message from Finder:</strong> <br><em>{{ finder_message|linebreaksbr }}</em></li>
+                {% endif %}
+            </ul>
+            
+            <p>
+                Please log in to your account to view more details about this found report and to see options for coordinating the return if applicable.
+            </p>
+            
+            <p style="text-align:center;">
+                <a href="{{ action_url }}" class="button">View Your Case Details</a>
+            </p>
+            
+            <p>If you have already recovered your device through other means, please update its status on our platform.</p>
+            
+            <p>Sincerely,<br>The PhoneIndex Team</p>
+        </div>
+        <div class="footer">
+            <p>© {% now "Y" %} PhoneIndex. Please do not reply directly to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

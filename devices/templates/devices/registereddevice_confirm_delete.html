@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+  .confirm-delete-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff3f3; /* Light red background for warning */
+    border: 1px solid #f5c6cb; /* Red border */
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .confirm-delete-container h2 {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #721c24; /* Dark red for title */
+  }
+  .confirm-delete-container p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .device-details {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: .5rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="confirm-delete-container text-center">
+    <h2>{{ page_title }}</h2>
+    <hr class="mb-4">
+
+    <p class="lead">Are you absolutely sure you want to delete the following device and all its associated reports (theft and found reports)?</p>
+    
+    <div class="device-details">
+        <p><strong>Device:</strong> {{ device.make }} {{ device.model_name }}</p>
+        <p><strong>IMEI:</strong> {{ device.imei }}</p>
+        {% if device.theft_report %}
+            <p class="text-danger">This device has a theft report (Case ID: {{ device.theft_report.case_id }}) associated with it.</p>
+            {% if device.theft_report.found_reports.exists %}
+                <p class="text-warning">There are also {{ device.theft_report.found_reports.count }} 'found' report(s) linked to this theft case.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <p class="fw-bold text-danger">This action cannot be undone.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-lg btn-danger me-2">
+        <i class="fas fa-trash-alt me-1"></i> Yes, Delete Permanently
+      </button>
+      <a href="{% url 'devices:user_device_list' %}" class="btn btn-lg btn-secondary">
+        <i class="fas fa-times me-1"></i> No, Cancel
+      </a>
+    </form>
+  </div>
+</div>
+{% endblock %}
