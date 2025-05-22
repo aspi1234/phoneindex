@@ -11,3 +11,7 @@ urlpatterns = [
     path('about-us/', views.about_us_view, name='about_us'), # Votre URL pour About Us
     # ... d'autres URLs de votre application home
 ]
+
+
+
+

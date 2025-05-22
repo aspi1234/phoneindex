@@ -80,7 +80,7 @@ DATABASES = {
         'ENGINE' : 'django.db.backends.postgresql',
         'NAME' : 'postgres',
         'USER' : 'postgres',
-        'PASSWORD' : 'password',
+        'PASSWORD' : 'password', # Be careful with passwords in shared code
         'HOST' : 'localhost', # or your host
         'PORT' : 5432, # default PostgreSQL port
     },
@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE' : 'django.db.backends.postgresql',
         'NAME' : 'postgres', # Your PostgreSQL database name
         'USER' : 'postgres',
-        'PASSWORD' : '1234',
+        'PASSWORD' : '1234', # Be careful with passwords in shared code
         'HOST' : 'localhost',
         'PORT' : 5432,
     },
@@ -142,8 +142,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'  # Replace 'home' with the name of your main page after login
-LOGOUT_REDIRECT_URL = 'base' # Or 'home', or any other page
+# --- CORRECTION APPLIED HERE ---
+LOGIN_REDIRECT_URL = 'home:home' # Corrected to use the 'home' namespace
+# --- END CORRECTION ---
+LOGOUT_REDIRECT_URL = 'base' # Or 'home:home' or any other page you prefer after logout
 
 #bootstrap messages
 from django.contrib.messages import constants as message_constants

@@ -18,30 +18,33 @@ Including another URLconf
 
 # monprojet/monprojet/urls.py (Votre urls.py principal)
 
+# home/urls.py
+# phoneindex/urls.py
+# This is the main URL configuration for your entire Django project.
+
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView # TemplateView n'est plus nécessaire ici pour la page d'accueil
+# from django.views.generic import RedirectView # You might not need this if not used
+
+# The problematic line would likely be here or similar:
+# from . import views  # <--- THIS IS THE LINE YOU LIKELY NEED TO REMOVE FROM phoneindex/urls.py
+# OR
+# from phoneindex import views # <--- ALSO WRONG FOR THIS FILE
+# OR
+# from phoneindex.views import some_view # <--- ALSO WRONG FOR THIS FILE
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')), # Ceci est pour vos /accounts/signup, /accounts/login etc.
+    path('accounts/', include('accounts.urls')), # Includes URLs for user authentication
 
-    # --- MODIFICATION ICI ---
-    # Incluez les URLs de votre application 'home' à la racine du site.
-    # Assurez-vous que votre application 'home' a un fichier urls.py
-    # et que ce fichier définit 'app_name = "home"' et une URL nommée 'home'
-    # pour votre page d'accueil, et 'about_us' pour la page About Us.
+    # This line correctly includes the URLs from your 'home' app at the project's root.
+    # It points to your `home/urls.py` file, which is correct.
     path('', include('home.urls')),
-    # --- FIN MODIFICATION ---
 
-    # Cette ligne n'est plus nécessaire si votre home.urls gère la racine
-    # path('home/', RedirectView.as_view(url='/', permanent=True)),
-
-    path('devices/', include('devices.urls', namespace='devices')), # Inclure le namespace ici aussi
+    path('devices/', include('devices.urls', namespace='devices')), # Includes URLs for devices app with a namespace
 ]
 
-# N'oubliez pas d'ajouter les configurations pour les fichiers statiques/médias si vous en avez besoin
-# (souvent ajoutées à la fin du fichier urls.py principal en mode DEBUG)
+# Don't forget to add static/media files configuration if needed (often for DEBUG mode)
 # from django.conf import settings
 # from django.conf.urls.static import static
 # if settings.DEBUG:
