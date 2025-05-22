@@ -215,6 +215,6 @@ class VerifyDeviceView(FormView):
         # This method is called if the form itself is invalid (e.g., IMEI format wrong)
         # The form with errors will be passed to the template automatically by FormView.
         context = self.get_context_data()
-        context['page_title'] = 'Verify Device IMEI - Error' # Update title for error
+        context['page_title'] = 'Verify Device IMEI' # Update title for error
         messages.error(self.request, "Invalid IMEI format. Please check the number and try again.")
         return self.render_to_response(context)

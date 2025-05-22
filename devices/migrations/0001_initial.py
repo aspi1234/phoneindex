@@ -5,6 +5,9 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
+# IMPORT DES NOUVEAUX VALIDATEURS ICI
+from devices.models import validate_imei_format, validate_imei_luhn
+
 
 class Migration(migrations.Migration):
 
@@ -19,7 +22,8 @@ class Migration(migrations.Migration):
             name='RegisteredDevice',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('imei', models.CharField(help_text='Enter the 15-digit IMEI number of your device. Dial *#06# to find it.', max_length=15, unique=True, validators=[devices.models.validate_imei], verbose_name='IMEI Number')),
+                # LIGNE CORRIGÉE : Remplacer [devices.models.validate_imei] par les nouveaux validateurs
+                ('imei', models.CharField(help_text='Enter the 15-digit IMEI number of your device. Dial *#06# to find it.', max_length=15, unique=True, validators=[devices.models.validate_imei_format, devices.models.validate_imei_luhn], verbose_name='IMEI Number')),
                 ('make', models.CharField(help_text='e.g., Samsung, Apple, Google', max_length=100, verbose_name='Make/Brand')),
                 ('model_name', models.CharField(help_text='e.g., Galaxy S23, iPhone 15 Pro', max_length=100, verbose_name='Model Name')),
                 ('color', models.CharField(max_length=50, verbose_name='Color')),
