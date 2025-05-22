@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - PhoneIndex{% endblock %}
+
+{% block extra_head %}
+  <style>
+    /* Styles pour l'animation d'apparition des blocs */
+    .fade-in-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+      /* Ajoute un petit délai pour chaque section pour un effet de cascade */
+      transition-delay: var(--delay);
+    }
+
+    .fade-in-section.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Optionnel: Styles pour la section d'introduction si vous voulez un arrière-plan */
+    .about-hero {
+      background: linear-gradient(135deg,#667eea 0%, #764ba2 100%); /* Couleurs douces */
+      padding: 60px 0;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    .about-hero h1 {
+        font-size: 3.5rem;
+        font-weight: bold;
+    }
+    .about-hero .lead {
+        font-size: 1.5rem;
+    }
+
+    /* Amélioration de l'apparence des titres de section */
+    h2 {
+      position: relative;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
+    h2::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 60px; /* Longueur de la ligne */
+      height: 4px; /* Épaisseur de la ligne */
+      background-color: #007bff; /* Couleur de la ligne */
+      border-radius: 2px;
+    }
+
+    /* Styles pour les éléments de liste - RETOUR AUX PUCES PAR DÉFAUT */
+    ul {
+      list-style-type: disc; /* Remet les puces par défaut */
+      padding-left: 20px; /* Ajoute un padding standard pour les puces */
+    }
+    ul li {
+      position: static; /* Retire le positionnement relatif */
+      padding-left: 0; /* Retire l'espace pour l'icône */
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    /* La règle ul li::before a été supprimée */
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="about-hero text-center">
+    <div class="container">
+        <h1 class="mb-4"> Your Trusted Partner in Mobile Security</h1>
+        <p class="lead mb-0">
+            Welcome to PhoneIndex, your dedicated platform for ensuring the authenticity and security of mobile devices. In today's fast-paced world, buying or selling a phone can be tricky, with concerns about stolen devices and fraudulent transactions. We built PhoneIndex to give you peace of mind and empower you with the information you need.
+        </p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            {# Section 1: Our Mission #}
+            <div class="fade-in-section" style="--delay: 0s;">
+                <h2 class="mb-3 mt-5">Our Mission</h2>
+                <p>Our mission is simple: to combat mobile phone theft and enhance device security for everyone. We believe that every phone transaction should be transparent and secure. By providing accessible tools, we aim to reduce the circulation of stolen devices and protect consumers from unknowingly purchasing illicit goods.</p>
+            </div>
+
+            {# Section 2: What We Do #}
+            <div class="fade-in-section" style="--delay: 0.2s;">
+                <h2 class="mt-5 mb-3">What We Do</h2>
+                <p>PhoneIndex offers two core services designed with your security in mind:</p>
+                <ul>
+                    <li>
+                        <strong>Instant IMEI Verification</strong>: Our powerful tool allows you to quickly check the status of any mobile device by entering its IMEI number. Find out instantly if a phone has been reported stolen or blacklisted across networks. This is your essential step before making a purchase.
+                    </li>
+                    <li>
+                        <strong>Stolen Phone Registration</strong>: If your phone is lost or stolen, you can easily register its IMEI in our secure database. This critical action helps prevent illegal resale and contributes to a broader effort to reduce phone theft, making it harder for criminals to profit from stolen devices.
+                    </li>
+                </ul>
+            </div>
+
+            {# Section 3: Why Choose PhoneIndex? #}
+            <div class="fade-in-section" style="--delay: 0.4s;">
+                <h2 class="mt-5 mb-3">Why Choose PhoneIndex?</h2>
+                <p>We're committed to making mobile device security simple, reliable, and accessible. Whether you're buying a used phone, selling one, or just want to ensure your own device is safe, PhoneIndex provides the clarity and confidence you need. We're more than just a service; we're a community working together for a safer mobile world.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    // Fonction pour gérer l'animation d'apparition des sections
+    document.addEventListener('DOMContentLoaded', function() {
+      const observerOptions = {
+        root: null, // utilise le viewport comme racine
+        rootMargin: '0px',
+        threshold: 0.1 // déclenche quand 10% de l'élément est visible
+      };
+
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target); // Arrête d'observer une fois l'animation déclenchée
+          }
+        });
+      }, observerOptions);
+
+      
+      document.querySelectorAll('.fade-in-section').forEach(section => {
+        observer.observe(section);
+      });
+    });
+  </script>
+{% endblock %}

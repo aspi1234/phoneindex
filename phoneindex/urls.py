@@ -16,14 +16,37 @@ Including another URLconf
 """
 # your_project_name/urls.py
 
+# monprojet/monprojet/urls.py (Votre urls.py principal)
+
+# home/urls.py
+# phoneindex/urls.py
+# This is the main URL configuration for your entire Django project.
+
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView, RedirectView # Make sure this is imported
+# from django.views.generic import RedirectView # You might not need this if not used
+
+# The problematic line would likely be here or similar:
+# from . import views  # <--- THIS IS THE LINE YOU LIKELY NEED TO REMOVE FROM phoneindex/urls.py
+# OR
+# from phoneindex import views # <--- ALSO WRONG FOR THIS FILE
+# OR
+# from phoneindex.views import some_view # <--- ALSO WRONG FOR THIS FILE
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')), # This is for your /accounts/signup, /accounts/login etc.
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('home/', RedirectView.as_view(url='/', permanent=True)), # Redirects /home/ to /
-    path('devices/', include('devices.urls', namespace='devices')), # Include the namespace here as well
+    path('accounts/', include('accounts.urls')), # Includes URLs for user authentication
+
+    # This line correctly includes the URLs from your 'home' app at the project's root.
+    # It points to your `home/urls.py` file, which is correct.
+    path('', include('home.urls')),
+
+    path('devices/', include('devices.urls', namespace='devices')), # Includes URLs for devices app with a namespace
 ]
+
+# Don't forget to add static/media files configuration if needed (often for DEBUG mode)
+# from django.conf import settings
+# from django.conf.urls.static import static
+# if settings.DEBUG:
+#     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

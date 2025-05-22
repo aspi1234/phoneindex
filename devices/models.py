@@ -1,24 +1,57 @@
-from django.db import models,IntegrityError
+from django.db import models, IntegrityError
 from django.conf import settings # To refer to the CustomUser model
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 import re # For basic IMEI validation
 from django.utils import timezone # For date operations
 
-# Basic IMEI validator (length and digits only - Luhn algorithm is more complex)
-def validate_imei(value):
-    if not re.match(r'^\d{15}$', value): # Checks if it's exactly 15 digits
+# Basic IMEI validator (length and digits only)
+def validate_imei_format(value):
+    """
+    Validates if the IMEI is exactly 15 digits.
+    """
+    if not re.match(r'^\d{15}$', value):
         raise ValidationError(
-            _('%(value)s is not a valid IMEI. It must be 15 digits.'),
+            _('%(value)s is not a valid IMEI format. It must be 15 digits.'),
             params={'value': value},
         )
-    # A more advanced validation might include the Luhn algorithm check here.
+
+def validate_imei_luhn(value):
+    """
+    Validates the IMEI using the Luhn algorithm (Mod 10 check).
+    Assumes the value is already 15 digits, as checked by validate_imei_format.
+    """
+    # Convert string to list of integers
+    digits = [int(d) for d in value]
+
+    # Drop the last digit (checksum digit)
+    checksum_digit = digits.pop()
+    
+    # Reverse the remaining digits
+    reversed_digits = digits[::-1]
+
+    total = 0
+    for index, digit in enumerate(reversed_digits):
+        if index % 2 == 0: # Double every second digit
+            doubled_digit = digit * 2
+            if doubled_digit > 9: # If doubled digit is 10 or more, sum its digits
+                total += (doubled_digit % 10) + (doubled_digit // 10)
+            else:
+                total += doubled_digit
+        else: # Add other digits as they are
+            total += digit
+
+    # Compare the calculated checksum with the actual checksum digit
+    if (total + checksum_digit) % 10 != 0:
+        raise ValidationError(
+            _('The IMEI checksum is invalid. Please check the number.'),
+        )
 
 class RegisteredDevice(models.Model):
     STATUS_NORMAL = 'NORMAL'
     STATUS_STOLEN = 'STOLEN'
-    STATUS_RECOVERED = 'RECOVERED' # Or 'RESOLVED' as per user story for case resolution
-    STATUS_FALSE_ALARM = 'FALSE_ALARM' # Added from user story context
+    STATUS_RECOVERED = 'RECOVERED'
+    STATUS_FALSE_ALARM = 'FALSE_ALARM'
 
     STATUS_CHOICES = [
         (STATUS_NORMAL, _('Normal')),
@@ -28,15 +61,16 @@ class RegisteredDevice(models.Model):
     ]
 
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, # Refers to your CustomUser model
-        on_delete=models.CASCADE, # If user is deleted, their devices are also deleted
-        related_name='registered_devices' # Allows access like user.registered_devices.all()
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='registered_devices'
     )
     imei = models.CharField(
         _('IMEI Number'),
         max_length=15,
-        unique=True, # IMEI must be unique across all devices
-        validators=[validate_imei],
+        unique=True,
+        # Apply both validators: first format, then Luhn
+        validators=[validate_imei_format, validate_imei_luhn],
         help_text=_('Enter the 15-digit IMEI number of your device. Dial *#06# to find it.')
     )
     make = models.CharField(_('Make/Brand'), max_length=100, help_text=_('e.g., Samsung, Apple, Google'))
@@ -50,11 +84,11 @@ class RegisteredDevice(models.Model):
     distinguishing_features = models.TextField(
         _('Distinguishing Features'), 
         blank=True, 
-        null=True, # Allow it to be empty in the database
+        null=True,
         help_text=_('e.g., Carbon fiber case, small scratch on bottom right corner')
     )
     registration_date = models.DateTimeField(_('Registration Date'), auto_now_add=True)
-    last_updated = models.DateTimeField(_('Last Updated'), auto_now=True) # To track when status or details change
+    last_updated = models.DateTimeField(_('Last Updated'), auto_now=True)
     
     status = models.CharField(
         _('Status'),
@@ -69,14 +103,14 @@ class RegisteredDevice(models.Model):
     class Meta:
         verbose_name = _('Registered Device')
         verbose_name_plural = _('Registered Devices')
-        ordering = ['-registration_date'] # Default ordering for queries
+        ordering = ['-registration_date']
 
 # --- NEW THEFT REPORT MODEL ---
 class TheftReport(models.Model):
     REPORT_STATUS_ACTIVE = 'ACTIVE'
-    REPORT_STATUS_OWNER_RECOVERY = 'OWNER_RECOVERED' # Device recovered by owner directly
-    REPORT_STATUS_FINDER_RETURN = 'FINDER_RETURNED' # Device returned via finder process
-    REPORT_STATUS_FALSE_ALARM = 'RESOLVED_FALSE_ALARM' # Report was a false alarm
+    REPORT_STATUS_OWNER_RECOVERY = 'OWNER_RECOVERED'
+    REPORT_STATUS_FINDER_RETURN = 'FINDER_RETURNED'
+    REPORT_STATUS_FALSE_ALARM = 'RESOLVED_FALSE_ALARM'
 
     REPORT_STATUS_CHOICES = [
         (REPORT_STATUS_ACTIVE, _('Active Report')),
@@ -85,44 +119,34 @@ class TheftReport(models.Model):
         (REPORT_STATUS_FALSE_ALARM, _('Resolved - False Alarm')),
     ]
 
-    # Link to the device that was stolen.
-    # OneToOneField ensures a device can only have one *active* theft report.
-    # If a device is stolen multiple times, you might need a ForeignKey and an 'is_active_report' flag,
-    # or a different way to handle historical reports. For now, OneToOne for simplicity.
-    # --- UPDATED REGION_CHOICES ---
     REGION_CHOICES = [
         ('AD', _('Adamaoua')),
-        ('CE', _('Center')),        # Corrected from your 'Center' to 'Centre' for common French spelling, adjust if 'Center' is preferred.
-        ('ES', _('East')),          # Est in French
-        ('FN', _('Far North')),     # Extrême-Nord in French
+        ('CE', _('Center')),
+        ('ES', _('East')),
+        ('FN', _('Far North')),
         ('LT', _('Littoral')),
-        ('NO', _('North')),         # Nord in French
-        ('NW', _('North-West')),    # Nord-Ouest in French
-        ('OU', _('West')),          # Ouest in French (OU is a good short code)
-        ('SU', _('South')),         # Sud in French
-        ('SW', _('South-West')),    # Sud-Ouest in French
-        ('UN', _('Unknown/Other')), # Kept the 'Unknown' option, can be removed if not needed
+        ('NO', _('North')),
+        ('NW', _('North-West')),
+        ('OU', _('West')),
+        ('SU', _('South')),
+        ('SW', _('South-West')),
+        ('UN', _('Unknown/Other')),
     ]
-    # --- END OF UPDATED REGION_CHOICES ---
 
     device = models.OneToOneField(
         RegisteredDevice,
         on_delete=models.CASCADE,
         related_name='theft_report'
     )
-    # Add the new region_of_theft field
     region_of_theft = models.CharField(
         _('Region of Theft'),
-        max_length=2, # Max length of your region codes (e.g., 'UNK', 'AD', 'NW')
+        max_length=2,
         choices=REGION_CHOICES,
-        # Decide if this field is mandatory. If so, remove blank=True, null=True.
-        # For Case ID generation, it will be treated as required.
-        # blank=False, null=False, # Making it required by default
         help_text=_('Select the region where the theft occurred.')
     )
     case_id = models.CharField(
         _('Case ID'),
-        max_length=30, # e.g., CR-20231027-YDE-0001 (CR-YYYYMMDD-XXX-SSSS) -> 2 + 1 + 8 + 1 + 3 + 1 + 4 = 20. Let's use 25 for safety.
+        max_length=30,
         unique=True,
         editable=False
     )
@@ -138,8 +162,8 @@ class TheftReport(models.Model):
     status = models.CharField(
         _('Report Status'),
         max_length=30,
-        choices=REPORT_STATUS_CHOICES, # Make sure REPORT_STATUS_CHOICES is defined
-        default='ACTIVE' # Assuming REPORT_STATUS_ACTIVE is defined
+        choices=REPORT_STATUS_CHOICES,
+        default='ACTIVE'
     )
 
     def __str__(self):
@@ -149,16 +173,11 @@ class TheftReport(models.Model):
         today = timezone.now().date()
         date_str = today.strftime('%Y%m%d')
         
-        # Ensure region_of_theft is set. This should be guaranteed if the form requires it.
         if not self.region_of_theft:
-            # This case should ideally not happen if the form enforces region selection.
-            # Handle it gracefully, perhaps by defaulting to 'UNK' or raising an error earlier.
-            # For now, let's assume it will be set. If it can be optional, the logic needs adjustment.
             raise ValueError("Region of theft must be set to generate a Case ID.")
 
-        region_code = self.region_of_theft.upper() # Ensure region code is uppercase for consistency
+        region_code = self.region_of_theft.upper()
 
-        # Find the latest report for today AND this region to determine the next sequence number
         last_report_today_region = TheftReport.objects.filter(
             case_id__startswith=f'CR-{date_str}-{region_code}-'
         ).order_by('case_id').last()
@@ -169,15 +188,12 @@ class TheftReport(models.Model):
                 last_sequence_str = last_report_today_region.case_id.split('-')[-1]
                 next_sequence = int(last_sequence_str) + 1
             except (IndexError, ValueError):
-                # Fallback: count reports for the day and region
-                # This is less ideal as it doesn't guarantee a strict sequence if an ID was deleted or skipped
                 next_sequence = TheftReport.objects.filter(
                     reported_at__date=today, 
                     region_of_theft=self.region_of_theft
                 ).count() + 1
         
         if next_sequence > 9999:
-            # Consider a more robust error or logging
             raise ValidationError("Case ID sequence limit reached for today in this region.")
 
         sequence_str = f"{next_sequence:04d}"
@@ -185,9 +201,7 @@ class TheftReport(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.case_id: 
-            # The form should have populated region_of_theft by now
             if not self.region_of_theft:
-                # This state should be prevented by form validation making region_of_theft required
                 raise IntegrityError("Cannot save TheftReport: region_of_theft is required to generate a Case ID.")
 
             while True:
@@ -195,16 +209,9 @@ class TheftReport(models.Model):
                 if not TheftReport.objects.filter(case_id=potential_case_id).exists():
                     self.case_id = potential_case_id
                     break
-                # If collision, _generate_case_id will try next sequence in its next call within the loop
-                # (This implies _generate_case_id's logic for finding next_sequence needs to be robust to repeated calls
-                # or the loop needs to increment something itself if _generate_case_id is deterministic given the same state)
-                # The current _generate_case_id relies on what's in DB, so re-querying is fine.
         super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _('Theft Report')
         verbose_name_plural = _('Theft Reports')
         ordering = ['-reported_at']
-
-# Ensure RegisteredDevice model is defined above or imported if in separate file
-# Ensure REPORT_STATUS_CHOICES, REPORT_STATUS_ACTIVE are defined within TheftReport or globally.
