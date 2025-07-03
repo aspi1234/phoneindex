@@ -154,3 +154,10 @@ MESSAGE_TAGS = {
     message_constants.WARNING: 'warning',
     message_constants.ERROR: 'danger', # Bootstrap uses 'danger' for error styling
 }
+
+# --- SESSION SECURITY SETTINGS ---
+# Log out the user after 2 minutes (120 seconds) of inactivity.
+SESSION_COOKIE_AGE = 120  # Session will expire after 120 seconds regardless of activity.
+SESSION_SAVE_EVERY_REQUEST = True # The session is saved on every request, effectively resetting the inactivity timer.
+# This combination means: the session cookie will be set to expire 120 seconds from the *last request*.
+# If a user is inactive for 120 seconds, their session expires.

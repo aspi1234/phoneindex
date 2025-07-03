@@ -43,7 +43,7 @@ class CustomUser(AbstractUser):
     # Add our custom fields
     # 'name' from the user story will be split into first_name and last_name
     # first_name and last_name are already part of AbstractUser
-    phone_number = models.CharField(_('phone number'), max_length=20, blank=True) # Making blank=True initially, can be changed
+    phone_number = models.CharField(_('phone number'), max_length=20, blank=True,null=True) # Making blank=True initially, can be changed
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name'] # email and password are required by default.
